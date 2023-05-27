@@ -198,6 +198,7 @@ extension TrackersViewController: UITextFieldDelegate {
     
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
         textField.text = ""
+        filterCategories = categories
         trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
         return true
     }
@@ -217,6 +218,7 @@ extension TrackersViewController: AddTrackerViewControllerDelegate {
         } else {
             categories.append(.init(title: "Тест 1", trackers: [.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday])]))
         }
+        filterCategories = categories
         trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
     }
 }
