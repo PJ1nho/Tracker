@@ -22,6 +22,8 @@ final class ScheduleTableView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Interface
+    
     func setupUI() {
         configureTableView()
         configureConstraints()
@@ -48,6 +50,8 @@ final class ScheduleTableView: UIView {
     }
 }
 
+    // MARK: - UITableViewDataSource
+
 extension ScheduleTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         days.count
@@ -69,6 +73,8 @@ extension ScheduleTableView: UITableViewDataSource {
     
     
 }
+
+    // MARK: - UITableViewDelegate
 
 extension ScheduleTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

@@ -32,6 +32,8 @@ final class TrackerCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    //MARK: - Interface
+    
     func setupCellUI() {
         configureColorView()
         configureTitleLabel()
@@ -119,6 +121,8 @@ final class TrackerCell: UICollectionViewCell {
             daysCountLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12)
         ])
     }
+    
+    //MARK: - Functions
     
     func configure(tracker: Tracker, days: Int, isSelected: Bool) {
         self.tracker = tracker

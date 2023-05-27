@@ -23,6 +23,8 @@ final class СhooseCategoryViewController: UIViewController {
         plugView.isHidden = true
     }
     
+    // MARK: - Interface
+    
     private func setupUI() {
         title = "Категория"
         view.backgroundColor = .white

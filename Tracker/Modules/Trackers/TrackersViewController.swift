@@ -9,7 +9,6 @@ import UIKit
 
 class TrackersViewController: UIViewController {
     
-    private var addTrackerButton = UIButton()
     private let titleLabel = UILabel()
     private let datePicker = UIDatePicker()
     private let searchTextField = UISearchTextField()
@@ -17,6 +16,7 @@ class TrackersViewController: UIViewController {
     private let plugImageView = UIImageView()
     private let plugLabelView = UILabel()
     private let trackerItemsView = TrackerItemsView()
+    private var addTrackerButton = UIButton()
     private var categories: [TrackerCategory] = [
         .init(title: "Домашний уют", trackers: [.init(id: UUID(), name: "abc", color: .red, emojie: "😪", schedule: [.friday]), .init(id: UUID(), name: "ABC", color: .green, emojie: "😪", schedule: [.wednesday])]), .init(title: "Заголовок 2", trackers: [.init(id: UUID(), name: "123", color: .black, emojie: "😪", schedule: [.friday])])
     ]
@@ -27,8 +27,11 @@ class TrackersViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        filterCategories = categories
         setupUI()
     }
+    
+    // MARK: - Interface
     
     func setupUI() {
         view.backgroundColor = .white
@@ -72,12 +75,6 @@ class TrackersViewController: UIViewController {
         addTrackerButton.addTarget(self, action: #selector(addTrackerButtonTapped), for: .touchUpInside)
         view.addSubview(addTrackerButton)
     }
-    
-    @objc private func addTrackerButtonTapped() {
-        let addTrackerViewController = AddTrackerViewController()
-        let navigationController = UINavigationController(rootViewController: addTrackerViewController)
-        present(navigationController, animated: true)
-    }
 
     func configureTitleLabel() {
         titleLabel.text = "Трекеры"
@@ -93,20 +90,6 @@ class TrackersViewController: UIViewController {
         datePicker.addTarget(self, action: #selector(datePickerValueChanged(_:)), for: .valueChanged)
         datePicker.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(datePicker)
-    }
-    
-    @objc private func datePickerValueChanged(_ sender: UIDatePicker) {
-        let dateFormatter: DateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .short
-        dateFormatter.dateFormat = "dd.MM.yy"
-        let selectedDate: String = dateFormatter.string(from: sender.date)
-        let date = dateFormatter.date(from: selectedDate)
-        guard let date = date else { return }
-        datePicker.date = date
-        currentDate = date
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
-        presentedViewController?.dismiss(animated: true)
-        
     }
     
     func configureSearchTextField() {
@@ -156,7 +139,29 @@ class TrackersViewController: UIViewController {
             plugLabelView.centerXAnchor.constraint(equalTo: plugView.centerXAnchor)
         ])
     }
+    
+    // MARK: - Functions
+    
+    @objc private func addTrackerButtonTapped() {
+        let addTrackerViewController = AddTrackerViewController()
+        addTrackerViewController.delegate = self
+        let navigationController = UINavigationController(rootViewController: addTrackerViewController)
+        present(navigationController, animated: true)
+    }
+    
+    @objc private func datePickerValueChanged(_ sender: UIDatePicker) {
+        let dateFormatter = DateFormatterService.shared.datePickerFormatter
+        let selectedDate: String = dateFormatter.string(from: sender.date)
+        let date = dateFormatter.date(from: selectedDate)
+        guard let date = date else { return }
+        datePicker.date = date
+        currentDate = date
+        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        presentedViewController?.dismiss(animated: true)
+    }
 }
+
+    //MARK: - TrackerItemsViewDelegate
 
 extension TrackersViewController: TrackerItemsViewDelegate {
     func didTapDoneButton(trackerId: UUID) {
@@ -166,21 +171,52 @@ extension TrackersViewController: TrackerItemsViewDelegate {
             completedTrackers.append(.init(id: trackerId, date: currentDate))
             completedSet.insert(trackerId)
         }
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
     }
 }
 
+    //MARK: - UITextFieldDelegate
+
 extension TrackersViewController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        let searchString = (textField.text ?? "") + string
-        filterCategories = categories.filter { $0.trackers.contains { $0.name.hasPrefix(searchString)  } }
+        var searchString = ""
+        if range.length > 0 {
+            searchString = "\(textField.text!.dropLast())"
+        } else {
+            searchString = "\(textField.text! + string)"
+        }
+        filterCategories = categories.filter { $0.trackers.contains { $0.name.lowercased().hasPrefix(searchString.lowercased())  } }
         print(searchString)
         if searchString.isEmpty {
+            filterCategories = categories
             trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
         } else {
             trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
         }
         return true
     }
+    
+    func textFieldShouldClear(_ textField: UITextField) -> Bool {
+        textField.text = ""
+        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        return true
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        return textField.resignFirstResponder()
+    }
 }
 
+    //MARK: - AddTrackerViewControllerDelegate
+
+extension TrackersViewController: AddTrackerViewControllerDelegate {
+    func createNewTracker(name: String) {
+        if categories.contains(where: { $0.title == "Тест 1"}),
+           let index = categories.firstIndex(where: { $0.title == "Тест 1"}) {
+            categories[index].trackers.append(.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday]))
+        } else {
+            categories.append(.init(title: "Тест 1", trackers: [.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday])]))
+        }
+        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+    }
+}

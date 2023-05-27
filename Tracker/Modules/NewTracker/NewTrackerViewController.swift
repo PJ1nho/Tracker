@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol NewTrackerViewControllerDelegate: AnyObject {
+    func createNewTracker(name: String)
+}
+
 final class NewTrackerViewController: UIViewController {
     
     private let textFieldView = UIView()
@@ -15,10 +19,14 @@ final class NewTrackerViewController: UIViewController {
     private let cancelButton = UIButton()
     private let createButton = UIButton()
     
+    weak var delegate: NewTrackerViewControllerDelegate?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
     }
+    
+    // MARK: - Interface
     
     private func setupUI() {
         title = "Новая привычка"
@@ -42,6 +50,7 @@ final class NewTrackerViewController: UIViewController {
         textField.placeholder = "Введите название трекера"
         textField.backgroundColor = .clear
         textField.layer.cornerRadius = 16
+        textField.delegate = self
         textField.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(textField)
     }
@@ -65,16 +74,12 @@ final class NewTrackerViewController: UIViewController {
         view.addSubview(cancelButton)
     }
     
-    @objc private func cancelButtonTapped() {
-        dismiss(animated: true)
-    }
-    
-
     private func configureCreateButton() {
         createButton.setTitle("Создать", for: .normal)
         createButton.setTitleColor(.white, for: .normal)
         createButton.backgroundColor = UIColor(red: 0.682, green: 0.686, blue: 0.706, alpha: 1)
         createButton.layer.cornerRadius = 16
+        createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
         createButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(createButton)
     }
@@ -109,7 +114,22 @@ final class NewTrackerViewController: UIViewController {
             createButton.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
+    
+    // MARK: - Functions
+    
+    @objc private func cancelButtonTapped() {
+        dismiss(animated: true)
+    }
+    
+    @objc private func createButtonTapped() {
+        delegate?.createNewTracker(name: textField.text ?? "")
+        self.dismiss(animated: true, completion: {
+            self.presentingViewController?.dismiss(animated: true)
+        })
+    }
 }
+
+    // MARK: - MenuTableViewDelegate
 
 extension NewTrackerViewController: MenuTableViewDelegate {
     func didTapMenu(menuItem: NewTrackerMenu) {
@@ -121,5 +141,17 @@ extension NewTrackerViewController: MenuTableViewDelegate {
             let navigationController = UINavigationController(rootViewController: newTrackerViewController)
             present(navigationController, animated: true)
         }
+    }
+}
+
+    // MARK: - UITextFieldDelegate
+
+extension NewTrackerViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        return textField.resignFirstResponder()
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
     }
 }

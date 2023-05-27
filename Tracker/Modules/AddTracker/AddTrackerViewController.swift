@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol AddTrackerViewControllerDelegate: AnyObject {
+    func createNewTracker(name: String)
+}
+
 final class AddTrackerViewController: UIViewController {
     
     private let addTrackerEventButton = UIButton()
@@ -14,11 +18,14 @@ final class AddTrackerViewController: UIViewController {
     private let addUnregularEventButton = UIButton()
     private let unregularEventButtonLabel = UILabel()
     
+    weak var delegate: AddTrackerViewControllerDelegate?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        
     }
+    
+    //MARK: - Interface
     
     func setupUI() {
         title = "Создание трекера"
@@ -40,14 +47,7 @@ final class AddTrackerViewController: UIViewController {
         addTrackerEventButton.addTarget(self, action: #selector(addTrackerEventButtonTapped), for: .touchUpInside)
         addTrackerEventButton.addSubview(trackerEventButtonLabel)
     }
-    
-    @objc private func addTrackerEventButtonTapped() {
-        let newTrackerViewController = NewTrackerViewController()
-        let navigationController = UINavigationController(rootViewController: newTrackerViewController)
-        present(navigationController, animated: true)
-    }
-    
-    
+
     
     func configureUnregularEventButton() {
         addUnregularEventButton.backgroundColor = UIColor(red: 0.102, green: 0.106, blue: 0.133, alpha: 1)
@@ -84,5 +84,22 @@ final class AddTrackerViewController: UIViewController {
             addUnregularEventButton.widthAnchor.constraint(equalToConstant: 335),
             addUnregularEventButton.heightAnchor.constraint(equalToConstant: 60)
         ])
+    }
+    
+    //MARK: - Functions
+    
+    @objc private func addTrackerEventButtonTapped() {
+        let newTrackerViewController = NewTrackerViewController()
+        newTrackerViewController.delegate = self
+        let navigationController = UINavigationController(rootViewController: newTrackerViewController)
+        present(navigationController, animated: true)
+    }
+}
+
+    //MARK: - NewTrackerViewControllerDelegate
+
+extension AddTrackerViewController: NewTrackerViewControllerDelegate {
+    func createNewTracker(name: String) {
+        delegate?.createNewTracker(name: name)
     }
 }

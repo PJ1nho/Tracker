@@ -19,6 +19,8 @@ final class StatisticViewController: UIViewController {
         setupUI()
     }
     
+    //MARK: - Interface
+    
     func setupUI() {
         view.backgroundColor = .white
         configureTitleLabel()

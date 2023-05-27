@@ -22,6 +22,8 @@ class EmojiCollectionView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Interface
+    
     func setupUI() {
         configureCollectionView()
         addSubview(collectionView)
@@ -49,7 +51,7 @@ class EmojiCollectionView: UIView {
     }
 }
 
-//MARK: UICollectionViewDataSource&UICollectionViewDelegate
+    // MARK: - UICollectionViewDataSource&UICollectionViewDelegate
 
 extension EmojiCollectionView: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -67,7 +69,7 @@ extension EmojiCollectionView: UICollectionViewDataSource, UICollectionViewDeleg
     }
 }
 
-//MARK: UICollectionViewDelegateFlowLayout
+    // MARK: - UICollectionViewDelegateFlowLayout
 
 extension EmojiCollectionView: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

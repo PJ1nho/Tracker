@@ -28,6 +28,8 @@ final class MenuTableView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    //MARK: - Interface
+    
     func setupUI() {
         configureTableView()
         configureConstraints()
@@ -54,6 +56,8 @@ final class MenuTableView: UIView {
     }
 }
 
+    //MARK: - UITableViewDataSource
+
 extension MenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         menu.count
@@ -69,6 +73,8 @@ extension MenuTableView: UITableViewDataSource {
     
     
 }
+
+    //MARK: - UITableViewDelegate
 
 extension MenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

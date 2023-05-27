@@ -40,6 +40,8 @@ final class ColorCollectionView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    //MARK: - Interface
+    
     func setupUI() {
         configureCollectionView()
         addSubview(collectionView)
@@ -66,7 +68,7 @@ final class ColorCollectionView: UIView {
     }
 }
 
-//MARK: UICollectionViewDataSource&UICollectionViewDelegate
+    //MARK: UICollectionViewDataSource&UICollectionViewDelegate
 
 extension ColorCollectionView: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -85,7 +87,7 @@ extension ColorCollectionView: UICollectionViewDataSource, UICollectionViewDeleg
 //    }
 }
 
-//MARK: UICollectionViewDelegateFlowLayout
+    //MARK: UICollectionViewDelegateFlowLayout
 
 extension ColorCollectionView: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

@@ -31,6 +31,8 @@ class TrackerItemsView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    //MARK: - Interface
+    
     func setupUI() {
         configureCollectionView()
         addSubview(collectionView)
@@ -56,6 +58,8 @@ class TrackerItemsView: UIView {
         ])
     }
     
+    //MARK: - Functions
+    
     func configure(viewModel: ViewModel) {
         self.categories = viewModel.categories
         self.completedTrackers = viewModel.completedTrackers
@@ -63,6 +67,8 @@ class TrackerItemsView: UIView {
         collectionView.reloadData()
     }
 }
+
+    //MARK: - UICollectionViewDataSource&UICollectionViewDelegate
 
 extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -77,7 +83,7 @@ extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate
         cell?.delegate = self
         let tracker = categories[indexPath.section].trackers[indexPath.row]
         let days = completedTrackers.filter { $0.id == tracker.id }.count
-        let dateFormatter = DateFormatter()
+        let dateFormatter = DateFormatterService.shared.dateFormatterCell
         let isSelected = completedTrackers.contains { trackerRecord in
             let trackerRecordDateString = dateFormatter.string(from: trackerRecord.date)
             let sameDay = Calendar.current.isDate(trackerRecord.date, equalTo: currentDate, toGranularity: .day)
@@ -107,6 +113,8 @@ extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate
     }
 }
 
+    //MARK: - UICollectionViewDelegateFlowLayout
+
 extension TrackerItemsView: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let itemWidth = (UIScreen.main.bounds.width - 42) / 2
@@ -128,6 +136,8 @@ extension TrackerItemsView: UICollectionViewDelegateFlowLayout {
                                                   verticalFittingPriority: .fittingSizeLevel)
     }
 }
+
+    //MARK: - TrackerCellDelegate
 
 extension TrackerItemsView: TrackerCellDelegate {
     func didTapDoneButton(trackerId: UUID) {

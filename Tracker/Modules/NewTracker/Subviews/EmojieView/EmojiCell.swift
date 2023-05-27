@@ -20,6 +20,8 @@ final class EmojiCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Interface
+    
     func setupCellUI() {
         configureTitleLabel()
         configureConstraints()

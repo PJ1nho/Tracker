@@ -17,6 +17,8 @@ final class ScheduleViewController: UIViewController {
         setupUI()
     }
     
+    //MARK: - Interface
+    
     private func setupUI() {
         title = "Расписание"
         view.backgroundColor = .white
@@ -43,10 +45,6 @@ final class ScheduleViewController: UIViewController {
         readyButton.addSubview(readyButtonLabel)
     }
     
-    @objc private func readyButtonTapped() {
-        dismiss(animated: true)
-    }
-    
     private func configureConstraints() {
         NSLayoutConstraint.activate([
             scheduleTableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 79),
@@ -64,4 +62,9 @@ final class ScheduleViewController: UIViewController {
         ])
     }
     
+    //MARK: - Functions
+    
+    @objc private func readyButtonTapped() {
+        dismiss(animated: true)
+    }
 }
