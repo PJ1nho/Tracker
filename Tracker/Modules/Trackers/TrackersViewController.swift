@@ -138,6 +138,8 @@ class TrackersViewController: UIViewController {
             plugLabelView.topAnchor.constraint(equalTo: plugImageView.bottomAnchor, constant: 8),
             plugLabelView.centerXAnchor.constraint(equalTo: plugView.centerXAnchor)
         ])
+        
+
     }
     
     // MARK: - Functions
@@ -156,8 +158,18 @@ class TrackersViewController: UIViewController {
         guard let date = date else { return }
         datePicker.date = date
         currentDate = date
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
         presentedViewController?.dismiss(animated: true)
+    }
+    
+    func checkingPlugView() {
+        if filterCategories.isEmpty {
+            trackerItemsView.isHidden = true
+            plugView.isHidden = false
+        } else {
+            trackerItemsView.isHidden = false
+            plugView.isHidden = true
+        }
     }
 }
 
@@ -165,6 +177,10 @@ class TrackersViewController: UIViewController {
 
 extension TrackersViewController: TrackerItemsViewDelegate {
     func didTapDoneButton(trackerId: UUID) {
+        let futureDate = Date()
+        if futureDate < currentDate {
+            return
+        }
         if let trackerIndex = completedTrackers.firstIndex { $0.id == trackerId && Calendar.current.isDate($0.date, equalTo: currentDate, toGranularity: .day)} {
             completedTrackers.remove(at: trackerIndex)
         } else {
@@ -186,6 +202,7 @@ extension TrackersViewController: UITextFieldDelegate {
             searchString = "\(textField.text! + string)"
         }
         filterCategories = categories.filter { $0.trackers.contains { $0.name.lowercased().hasPrefix(searchString.lowercased())  } }
+        checkingPlugView()
         print(searchString)
         if searchString.isEmpty {
             filterCategories = categories
@@ -199,6 +216,7 @@ extension TrackersViewController: UITextFieldDelegate {
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
         textField.text = ""
         filterCategories = categories
+        checkingPlugView()
         trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
         return true
     }

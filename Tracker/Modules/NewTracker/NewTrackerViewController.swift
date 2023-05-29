@@ -16,6 +16,7 @@ final class NewTrackerViewController: UIViewController {
     private let textFieldView = UIView()
     private let textField = UITextField()
     private let menuTableView = MenuTableView()
+    private let stackView = UIStackView()
     private let cancelButton = UIButton()
     private let createButton = UIButton()
     
@@ -34,6 +35,7 @@ final class NewTrackerViewController: UIViewController {
         configuretextFieldView()
         configureTextField()
         configureMenuTableView()
+        configureStackView()
         configureCancelButton()
         configureCreateButton()
         configureConstraints()
@@ -61,6 +63,14 @@ final class NewTrackerViewController: UIViewController {
         menuTableView.delegate = self
     }
     
+    private func configureStackView() {
+        stackView.spacing = 8
+        stackView.distribution = .fillEqually
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stackView)
+        stackView.addArrangedSubview(cancelButton)
+        stackView.addArrangedSubview(createButton)
+    }
     
     private func configureCancelButton() {
         cancelButton.setTitle("Отменить", for: .normal)
@@ -71,7 +81,7 @@ final class NewTrackerViewController: UIViewController {
         cancelButton.layer.borderWidth = 1
         cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(cancelButton)
+
     }
     
     private func configureCreateButton() {
@@ -81,7 +91,6 @@ final class NewTrackerViewController: UIViewController {
         createButton.layer.cornerRadius = 16
         createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
         createButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(createButton)
     }
     
     private func configureConstraints() {
@@ -102,16 +111,16 @@ final class NewTrackerViewController: UIViewController {
             menuTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             menuTableView.heightAnchor.constraint(equalToConstant: 150),
             
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            cancelButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -34),
-            cancelButton.widthAnchor.constraint(equalToConstant: 166),
-            cancelButton.heightAnchor.constraint(equalToConstant: 60),
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -34),
+            stackView.heightAnchor.constraint(equalToConstant: 60),
             
-            createButton.leadingAnchor.constraint(equalTo: cancelButton.trailingAnchor, constant: 8),
-            createButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -34),
-            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            createButton.widthAnchor.constraint(equalToConstant: 166),
-            createButton.heightAnchor.constraint(equalToConstant: 60),
+//            createButton.leadingAnchor.constraint(equalTo: cancelButton.trailingAnchor, constant: 8),
+//            createButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -34),
+//            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+//            createButton.widthAnchor.constraint(equalToConstant: 166),
+//            createButton.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
     
