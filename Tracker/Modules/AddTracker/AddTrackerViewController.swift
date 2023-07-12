@@ -8,7 +8,11 @@
 import UIKit
 
 protocol AddTrackerViewControllerDelegate: AnyObject {
-    func createNewTracker(name: String)
+    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule], category: String)
+}
+
+protocol AddUnregularEventVCDelegate: AnyObject {
+    func createNewUnregularEvent(name: String, color: UIColor, emojie: String, category: String)
 }
 
 final class AddTrackerViewController: UIViewController {
@@ -19,6 +23,7 @@ final class AddTrackerViewController: UIViewController {
     private let unregularEventButtonLabel = UILabel()
     
     weak var delegate: AddTrackerViewControllerDelegate?
+    weak var unregularDelegate: AddUnregularEventVCDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,12 +64,8 @@ final class AddTrackerViewController: UIViewController {
         unregularEventButtonLabel.font = .systemFont(ofSize: 16, weight: .medium)
         unregularEventButtonLabel.translatesAutoresizingMaskIntoConstraints = false
         addUnregularEventButton.addSubview(unregularEventButtonLabel)
-//        addUnregularEventButton.addTarget(self, action: #selector(unregularEventButtonTapped), for: .touchUpInside)
+        addUnregularEventButton.addTarget(self, action: #selector(unregularEventButtonTapped), for: .touchUpInside)
     }
-    
-//    @objc private func unregularEventButtonTapped() {
-//       
-//    }
     
     func confugureConstraints() {
         NSLayoutConstraint.activate([
@@ -94,12 +95,25 @@ final class AddTrackerViewController: UIViewController {
         let navigationController = UINavigationController(rootViewController: newTrackerViewController)
         present(navigationController, animated: true)
     }
+    
+    @objc private func unregularEventButtonTapped() {
+        let newUnregularEventViewController = NewUnregularEventViewController()
+        newUnregularEventViewController.delegate = self
+        let navigationController = UINavigationController(rootViewController: newUnregularEventViewController)
+        present(navigationController, animated: true)
+    }
 }
 
     //MARK: - NewTrackerViewControllerDelegate
 
 extension AddTrackerViewController: NewTrackerViewControllerDelegate {
-    func createNewTracker(name: String) {
-        delegate?.createNewTracker(name: name)
+    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule], category: String) {
+        delegate?.createNewTracker(name: name, color: color, emojie: emojie, schedule: schedule, category: category)
+    }
+}
+
+extension AddTrackerViewController: NewUnregularEventViewControllerDelegate {
+    func createNewUnregularEvent(name: String, color: UIColor, emojie: String, category: String) {
+        unregularDelegate?.createNewUnregularEvent(name: name, color: color, emojie: emojie, category: category)
     }
 }

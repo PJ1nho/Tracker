@@ -8,7 +8,7 @@
 import UIKit 
 
 final class EmojiCell: UICollectionViewCell {
-    
+
     var titleLabel = UILabel()
     
     override init(frame: CGRect) {
@@ -23,13 +23,14 @@ final class EmojiCell: UICollectionViewCell {
     // MARK: - Interface
     
     func setupCellUI() {
+        contentView.layer.cornerRadius = 16
         configureTitleLabel()
         configureConstraints()
     }
     
     func configureTitleLabel() {
         titleLabel.text = ""
-        titleLabel.font = .systemFont(ofSize: 30, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 32, weight: .bold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(titleLabel)
     }

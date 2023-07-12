@@ -17,13 +17,13 @@ class TrackersViewController: UIViewController {
     private let plugLabelView = UILabel()
     private let trackerItemsView = TrackerItemsView()
     private var addTrackerButton = UIButton()
-    private var categories: [TrackerCategory] = [
-        .init(title: "Домашний уют", trackers: [.init(id: UUID(), name: "abc", color: .red, emojie: "😪", schedule: [.friday]), .init(id: UUID(), name: "ABC", color: .green, emojie: "😪", schedule: [.wednesday])]), .init(title: "Заголовок 2", trackers: [.init(id: UUID(), name: "123", color: .black, emojie: "😪", schedule: [.friday])])
-    ]
+    private lazy var categories = categoryStore.categories
     private var completedTrackers = [TrackerRecord]()
     private var completedSet = Set<UUID>()
     private var currentDate: Date!
     private var filterCategories = [TrackerCategory]()
+    private lazy var trackerStore: TrackerStoreProtocol = TrackerStore(delegate: self)
+    private let categoryStore = TrackerCategoryStore()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,6 +43,7 @@ class TrackersViewController: UIViewController {
         configureSearchTextField()
         configureTracker()
         configureConstraints()
+        trackerItemsView.trackerStore = trackerStore
     }
     
     private func configurePlugView() {
@@ -203,7 +204,7 @@ extension TrackersViewController: UITextFieldDelegate {
         }
         filterCategories = categories.filter { $0.trackers.contains { $0.name.lowercased().hasPrefix(searchString.lowercased())  } }
         checkingPlugView()
-        print(searchString)
+
         if searchString.isEmpty {
             filterCategories = categories
             trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
@@ -226,17 +227,46 @@ extension TrackersViewController: UITextFieldDelegate {
     }
 }
 
-    //MARK: - AddTrackerViewControllerDelegate
+// MARK: - AddTrackerViewControllerDelegate
 
 extension TrackersViewController: AddTrackerViewControllerDelegate {
-    func createNewTracker(name: String) {
-        if categories.contains(where: { $0.title == "Тест 1"}),
-           let index = categories.firstIndex(where: { $0.title == "Тест 1"}) {
-            categories[index].trackers.append(.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday]))
+    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule], category: String) {
+        let tracker = Tracker(id: UUID(), name: name, color: color, emojie: emojie, schedule: schedule)
+        if categories.contains(where: { $0.title == category}),
+           let index = categories.firstIndex(where: { $0.title == category }) {
+            categories[index].trackers.append(tracker)
+            // comm ОБНОВЛЯТТЬ ДАННЫЕ В КОРДАТЕ
         } else {
-            categories.append(.init(title: "Тест 1", trackers: [.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday])]))
+            // comm CОЗДАВАТЬ В КОРДАТЕ
+            categories.append(.init(id: UUID(), title: category, trackers: [tracker]))
+//            categoryStore.
         }
         filterCategories = categories
         trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        DispatchQueue.main.async {
+            do {
+                let categoryTracker = self.categories.first { $0.title == category }
+                guard let unwrapCategory = categoryTracker else { return }
+                try self.trackerStore.saveTracker(tracker: tracker, in: unwrapCategory)
+            } catch let error {
+                print("Tracker save error \(error.localizedDescription)")
+            }
+        }
     }
+}
+
+extension TrackersViewController: TrackerStoreDelegate {
+    func didUpdateTracker(_ insertedSections: IndexSet, _ deletedSections: IndexSet, _ updatedIndexPaths: [IndexPath], _ insertedIndexPaths: [IndexPath], _ deletedIndexPaths: [IndexPath]) {
+        DispatchQueue.main.async {
+            self.trackerItemsView.collectionView.performBatchUpdates {
+                self.trackerItemsView.collectionView.insertSections(insertedSections)
+                self.trackerItemsView.collectionView.deleteSections(deletedSections)
+                self.trackerItemsView.collectionView.reloadItems(at: updatedIndexPaths)
+                self.trackerItemsView.collectionView.insertItems(at: insertedIndexPaths)
+                self.trackerItemsView.collectionView.deleteItems(at: deletedIndexPaths)
+            }
+        }
+    }
+
+
 }

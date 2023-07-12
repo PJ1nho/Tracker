@@ -14,8 +14,10 @@ protocol TrackerItemsViewDelegate: AnyObject {
 
 class TrackerItemsView: UIView {
     
-    private var collectionView: UICollectionView!
-    private var categories = [TrackerCategory]()
+    var collectionView: UICollectionView!
+    var trackerStore: TrackerStoreProtocol!
+    private var trackerCategoryStore = TrackerCategoryStore()
+    private lazy var categories = trackerCategoryStore.categories
     private var completedTrackers = [TrackerRecord]()
     private var currentDate = Date()
     
@@ -72,16 +74,16 @@ class TrackerItemsView: UIView {
 
 extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return categories.count
+        return trackerStore.numberOfSections
     }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return categories[section].trackers.count
+        return trackerStore.numberOfItemsInSection(section)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? TrackerCell
         cell?.delegate = self
-        let tracker = categories[indexPath.section].trackers[indexPath.row]
+        guard let tracker = trackerStore.object(at: indexPath) else { return cell! }
         let days = completedTrackers.filter { $0.id == tracker.id }.count
         let dateFormatter = DateFormatterService.shared.dateFormatterCell
         let isSelected = completedTrackers.contains { trackerRecord in

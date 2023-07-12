@@ -1,23 +1,23 @@
 //
-//  MenuTableView.swift
+//  UnregularMenuTableView.swift
 //  Tracker
 //
-//  Created by Тихтей  Павел on 17.04.2023.
+//  Created by Тихтей  Павел on 03.07.2023.
 //
 
 import UIKit
 
-protocol MenuTableViewDelegate: AnyObject {
-    func didTapMenu(menuItem: NewTrackerMenu)
+protocol UnregularMenuTableViewDelegate: AnyObject {
+    func didTapMenu(menuItem: NewUnregularMenu)
 }
 
-final class MenuTableView: UIView {
+final class UnregularMenuTableView: UIView {
     
-    weak var delegate: MenuTableViewDelegate?
+    weak var delegate: UnregularMenuTableViewDelegate?
     
     private var tableView = UITableView()
     private let showCategoryVC = "ShowCategoryVC"
-    private let menu = NewTrackerMenu.allCases
+    private let menu = NewUnregularMenu.allCases
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -58,7 +58,7 @@ final class MenuTableView: UIView {
 
     //MARK: - UITableViewDataSource
 
-extension MenuTableView: UITableViewDataSource {
+extension UnregularMenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         menu.count
     }
@@ -77,14 +77,13 @@ extension MenuTableView: UITableViewDataSource {
 
     //MARK: - UITableViewDelegate
 
-extension MenuTableView: UITableViewDelegate {
+extension UnregularMenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 75
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let menuItem = menu[indexPath.row]
-
         delegate?.didTapMenu(menuItem: menuItem)
     }
 }
