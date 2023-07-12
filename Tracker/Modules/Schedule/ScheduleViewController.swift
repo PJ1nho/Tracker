@@ -7,10 +7,18 @@
 
 import UIKit
 
+protocol ScheduleViewControllerDelegate: AnyObject {
+    func didSelectSchedule(schedule: [Schedule])
+}
+
 final class ScheduleViewController: UIViewController {
     private let scheduleTableView = ScheduleTableView()
     private let readyButton = UIButton()
     private let readyButtonLabel = UILabel()
+    
+    weak var delegate: ScheduleViewControllerDelegate?
+    
+    weak var newTrackerDelegate: NewTrackerViewControllerScheduleDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,6 +36,7 @@ final class ScheduleViewController: UIViewController {
     }
     
     private func configureTableView() {
+        scheduleTableView.delegate = self
         view.addSubview(scheduleTableView)
         scheduleTableView.translatesAutoresizingMaskIntoConstraints = false
     }
@@ -66,5 +75,12 @@ final class ScheduleViewController: UIViewController {
     
     @objc private func readyButtonTapped() {
         dismiss(animated: true)
+        
+    }
+}
+
+extension ScheduleViewController: ScheduleTableViewDelegate {
+    func didSelectSchedule(schedule: [Schedule]) {
+        newTrackerDelegate?.didSelectSchedule(schedule: schedule)
     }
 }

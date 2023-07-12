@@ -7,11 +7,18 @@
 
 import UIKit
 
+protocol ScheduleTableViewDelegate: AnyObject {
+    func didSelectSchedule(schedule: [Schedule])
+}
 
 final class ScheduleTableView: UIView {
     
     private var tableView = UITableView()
     private let days = Schedule.allCases
+    var selectedSchedule: Set<Schedule> = []
+    
+    weak var delegate: ScheduleTableViewDelegate?
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -48,6 +55,25 @@ final class ScheduleTableView: UIView {
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
+    
+    private func switchStatus() {
+        for (index, weekDay) in Schedule.allCases.enumerated() {
+            let indexPath = IndexPath(row: index, section: 0)
+            let cell = tableView.cellForRow(at: indexPath)
+            guard let switchView = cell?.accessoryView as? UISwitch else {return}
+
+            if switchView.isOn {
+                selectedSchedule.insert(weekDay)
+            } else {
+                selectedSchedule.remove(weekDay)
+            }
+        }
+    }
+    
+    @objc func switcherValueChanged(switcher: UISwitch) {
+        switchStatus()
+        delegate?.didSelectSchedule(schedule: Array(selectedSchedule))
+    }
 }
 
     // MARK: - UITableViewDataSource
@@ -64,14 +90,15 @@ extension ScheduleTableView: UITableViewDataSource {
         let switchView = UISwitch(frame: .zero)
         switchView.setOn(false, animated: true)
         switchView.tag = indexPath.row
+        switchView.isOn = cell.isSelected
         switchView.onTintColor = UIColor(red: 55/255, green: 114/255, blue: 231/255, alpha: 1)
-//        switchView.target(forAction:  , withSender:  )
+        switchView.addTarget(self, action: #selector(switcherValueChanged), for: UIControl.Event.valueChanged)
         cell.accessoryView = switchView
         cell.selectionStyle = .none
         return cell
     }
     
-    
+
 }
 
     // MARK: - UITableViewDelegate
