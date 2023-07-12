@@ -58,7 +58,7 @@ class TrackerStore: NSObject {
 //        let key = #keyPath (TrackerCoreData.schedule)
 //        print(key)
 //        fetchRequest.predicate = NSPredicate(format: "%K CONTAINS[n] %@",
-//                                             #keyPath (TrackerCoreData.schedule),
+//                                             #keyPat (TrackerCoreData.schedule),
 //                                             [Schedule.friday.rawValue,
 //                                              Schedule.monday.rawValue,
 //                                              Schedule.saturday.rawValue,
