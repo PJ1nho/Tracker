@@ -201,6 +201,9 @@ final class NewUnregularEventViewController: UIViewController, NewTrackerViewCon
     
     @objc private func createButtonTapped() {
         delegate?.createNewUnregularEvent(name: textField.text ?? "", color: selectedColor, emojie: selectedEmojie, category: selectedCategory)
+        self.dismiss(animated: true, completion: {
+            self.presentingViewController?.dismiss(animated: true)
+        })
     }
 }
 

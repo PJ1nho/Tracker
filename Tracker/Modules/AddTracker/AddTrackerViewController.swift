@@ -8,7 +8,7 @@
 import UIKit
 
 protocol AddTrackerViewControllerDelegate: AnyObject {
-    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule], category: String)
+    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule]?, category: String)
 }
 
 protocol AddUnregularEventVCDelegate: AnyObject {
@@ -114,6 +114,6 @@ extension AddTrackerViewController: NewTrackerViewControllerDelegate {
 
 extension AddTrackerViewController: NewUnregularEventViewControllerDelegate {
     func createNewUnregularEvent(name: String, color: UIColor, emojie: String, category: String) {
-        unregularDelegate?.createNewUnregularEvent(name: name, color: color, emojie: emojie, category: category)
+        delegate?.createNewTracker(name: name, color: color, emojie: emojie, schedule: nil, category: category)
     }
 }

@@ -85,7 +85,7 @@ extension ScheduleTableView: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = days[indexPath.row].rawValue
+        cell.textLabel?.text = days[indexPath.row].value
         cell.backgroundColor = UIColor(red: 0.902, green: 0.91, blue: 0.922, alpha: 0.3)
         let switchView = UISwitch(frame: .zero)
         switchView.setOn(false, animated: true)

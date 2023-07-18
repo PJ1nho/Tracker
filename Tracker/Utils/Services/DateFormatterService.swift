@@ -23,4 +23,12 @@ class DateFormatterService {
         let dateFormatter = DateFormatter()
         return dateFormatter
     }()
+
+    func getFormatterDate(date: Date) -> Date {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd.MM.yy"
+        let dateString = dateFormatter.string(from: date)
+        let newDate = dateFormatter.date(from: dateString) ?? Date()
+        return newDate
+    }
 }

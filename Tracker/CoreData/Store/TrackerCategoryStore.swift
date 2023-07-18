@@ -20,8 +20,8 @@ final class TrackerCategoryStore: NSObject {
     lazy var categories: [TrackerCategory] = {
         do {
             let request = TrackerCategoryCoreData.fetchRequest()
-            let result = try context.fetch(request)
-            return try result.map { try createCategory(from: $0) }
+            let result = try context.fetch(request).map { try createCategory(from: $0) }
+            return result
         } catch {
             return []
         }
@@ -34,6 +34,34 @@ final class TrackerCategoryStore: NSObject {
         request.predicate = NSPredicate(format: "%K == %@", #keyPath(TrackerCategoryCoreData.categoryId), id.uuidString)
         let category = try context.fetch(request).first
         return category
+    }
+
+    func saveTracker() {
+
+    }
+
+    private func makeTracker(from trackerCoreData: TrackerCoreData) throws -> Tracker {
+        guard let id = trackerCoreData.id else {
+            throw TrackerStoreError.invalidTrackerID
+        }
+        guard let name = trackerCoreData.name else {
+            throw TrackerStoreError.invalidTrackerName
+        }
+        guard let colorHex = trackerCoreData.color else {
+            throw TrackerStoreError.invalidTrackerColor
+        }
+        guard let color = UIColor.deserialize(hexString: colorHex) else {
+            throw TrackerStoreError.hexDeserializationError
+        }
+        guard let emojie = trackerCoreData.emojie else {
+            throw TrackerStoreError.invalidTrackerEmoji
+        }
+        guard let schedule = trackerCoreData.schedule?.components(separatedBy: ",").compactMap({ Int($0) }) else {
+            throw TrackerStoreError.invalidTrackerSchedule
+        }
+        let scheduleFinal = schedule.compactMap { Schedule(rawValue: $0)}
+
+        return Tracker(id: id, name: name, color: color, emojie: emojie, schedule: scheduleFinal )
     }
     
 //    func saveCategory(category: TrackerCategory) throws {
