@@ -1,283 +1,139 @@
-//
-//  TrackerStore.swift
-//  Tracker
-//
-//  Created by Тихтей  Павел on 23.06.2023.
-//
-
-import CoreData
 import UIKit
+import CoreData
 
-// MARK: Protocols
-
-protocol TrackerStoreProtocol {
-    var numberOfSections: Int { get }
-    func numberOfItemsInSection(_ section: Int) -> Int
-    func name(of section: Int) -> String?
-    func object(at indexPath: IndexPath) -> Tracker?
-    func saveTracker(tracker: Tracker, in category: TrackerCategory) throws
-    func deleteTracker(at indexPath: IndexPath) throws
-//    func trackersFor(_ currentDate: Date, searchRequest: String?)
-//    func records(for trackerIndexPath: IndexPath) -> Set<TrackerRecord>
-    func getFilteredTrackers(date: Date, searchedText: String) throws
-    func getHeaderLabelFor(section: Int) -> String?
-}
-
-protocol TrackerStoreDelegate: AnyObject {
-    func didUpdateTracker(_ insertedSections: IndexSet, _ deletedSections: IndexSet, _ updatedIndexPaths: [IndexPath], _ insertedIndexPaths: [IndexPath], _ deletedIndexPaths: [IndexPath])
-    func updateTrackersCollection()
-}
-
-// MARK: Enum
-
-enum TrackerStoreError: Error {
-    case invalidTrackerID
-    case invalidTrackerName
-    case invalidTrackerColor
-    case invalidTrackerEmoji
-    case invalidTrackerSchedule
-    case hexDeserializationError
-}
-
-// MARK: TrackerStore
-
-class TrackerStore: NSObject {
-    private let context: NSManagedObjectContext
+final class TrackerStore: NSObject {
+    // MARK: - Errors
+    enum CategoryStoreError: Error {
+        case decodeError
+    }
+    
+    // MARK: - Public properties
+    var numberOfTrackers: Int {
+        fetchedResultsController.fetchedObjects?.count ?? 0
+    }
+    var numberOfSections: Int {
+        fetchedResultsController.sections?.count ?? 0
+    }
     weak var delegate: TrackerStoreDelegate?
-    private var insertedIndexPaths: [IndexPath] = []
-    private var deletedIndexPaths: [IndexPath] = []
-    private var updatedIndexPaths: [IndexPath] = []
-    private var insertedSections = IndexSet()
-    private var deletedSections = IndexSet()
-    private var categoryStore = TrackerCategoryStore()
-
-    private lazy var fetchedResultController: NSFetchedResultsController<TrackerCoreData> = {
-        let fetchRequest = TrackerCoreData.fetchRequest()
-
+    
+    // MARK: - Private properties
+    private let categoresStore = TrackerCategoryStore()
+    private let context: NSManagedObjectContext
+    private let colorMarshalling = UIColorMarshalling()
+    private lazy var fetchedResultsController: NSFetchedResultsController<TrackerCoreData> = {
+        let fetchRequest = NSFetchRequest<TrackerCoreData>(entityName: "TrackerCoreData")
         fetchRequest.sortDescriptors = [
-            NSSortDescriptor(key: "category.title", ascending: true),
-            NSSortDescriptor(key: "name", ascending: true)]
-
-//        let key = #keyPath (TrackerCoreData.schedule)
-//        print(key)
-//        fetchRequest.predicate = NSPredicate(format: "%K CONTAINS[n] %@",
-//                                             #keyPath (TrackerCoreData.schedule),
-//                                             [Schedule.friday.rawValue,
-//                                              Schedule.monday.rawValue,
-//                                              Schedule.saturday.rawValue,
-//                                              Schedule.sunday.rawValue,
-//                                              Schedule.thursday.rawValue,
-//                                              Schedule.tuesday.rawValue,
-//                                              Schedule.wednesday.rawValue])
-
-        let controller = NSFetchedResultsController(
+            NSSortDescriptor(keyPath: \TrackerCoreData.category?.categoryId, ascending: true),
+            NSSortDescriptor(keyPath: \TrackerCoreData.createdAt, ascending: true)
+        ]
+        let fetchedResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: context,
-            sectionNameKeyPath: #keyPath(TrackerCoreData.category.title),
-            cacheName: nil)
-
-        controller.delegate = self
-        try? controller.performFetch()
-        return controller
+            sectionNameKeyPath: "category",
+            cacheName: nil
+        )
+        fetchedResultsController.delegate = self
+        try? fetchedResultsController.performFetch()
+        return fetchedResultsController
     }()
-
-    // MARK: - Init
+    
+    // MARK: - Life cicle
     convenience override init() {
         let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
         self.init(context: context)
     }
-
-
+    
+    
     init(context: NSManagedObjectContext) {
         self.context = context
         super.init()
     }
-
-    init(context: NSManagedObjectContext, delegate: TrackerStoreDelegate) {
-        self.context = context
-        self.delegate = delegate
+    
+    // MARK: - Public methods
+    func createTracker(from coreData: TrackerCoreData) throws -> Tracker {
+        guard let idString = coreData.trackerId,
+              let id = UUID(uuidString: idString),
+              let label = coreData.label,
+              let emoji = coreData.emoji,
+              let colorHEX = coreData.colorHEX,
+              let complitedDaysCounter = coreData.records
+        else { throw CategoryStoreError.decodeError }
+        let color = colorFromHEX(colorHEX)
+        let schedule = scheduleFromCoreData(coreData)
+        
+        return Tracker(
+            id: id,
+            label: label,
+            color: color,
+            emoji: emoji,
+            schedule: schedule,
+            daysComplitedCount: complitedDaysCounter.count
+        )
     }
-
-    convenience init(delegate: TrackerStoreDelegate) {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-            fatalError("Error: appDelegate not found")
-        }
-        self.init(context: appDelegate.persistentContainer.viewContext, delegate: delegate)
+    
+    func getTrackerFromCoreData(id: UUID) throws -> TrackerCoreData? {
+        let fetchRequest = fetchedResultsController.fetchRequest
+        fetchRequest.predicate = NSPredicate(
+            format: "%K == %@",
+            #keyPath(TrackerCoreData.trackerId), id.uuidString
+        )
+        try fetchedResultsController.performFetch()
+        return fetchedResultsController.fetchedObjects?.first
     }
-
-    private func clearIndexes() {
-        insertedIndexPaths = []
-        deletedIndexPaths = []
-        updatedIndexPaths = []
-        insertedSections = IndexSet()
-        deletedSections = IndexSet()
+    
+    
+    func getNumberOfRowsInSection(section: Int) -> Int {
+        fetchedResultsController.sections?[section].numberOfObjects ?? 0
     }
-
-//    private func makeRecord(from recordCoreData: TrackerRecordCoreData) throws -> TrackerRecord {
-//        guard let trackerID = recordCoreData.tracker?.id else {
-////            throw TrackerRecordError.invalidTrackerID
-//        }
-//        guard let date = recordCoreData.date else {
-//            throw TrackerRecordError.invalidDate
-//        }
-//        return TrackerRecord(id: trackerID, date: date)
-//    }
-
-    private func makeTracker(from trackerCoreData: TrackerCoreData) throws -> Tracker {
-        guard let id = trackerCoreData.id else {
-            throw TrackerStoreError.invalidTrackerID
-        }
-        guard let name = trackerCoreData.name else {
-            throw TrackerStoreError.invalidTrackerName
-        }
-        guard let colorHex = trackerCoreData.color else {
-            throw TrackerStoreError.invalidTrackerColor
-        }
-        guard let color = UIColor.deserialize(hexString: colorHex) else {
-            throw TrackerStoreError.hexDeserializationError
-        }
-        guard let emojie = trackerCoreData.emojie else {
-            throw TrackerStoreError.invalidTrackerEmoji
-        }
-        let schedule = trackerCoreData.schedule?.components(separatedBy: ",").compactMap({ Int($0) })
-
-        let scheduleFinal = schedule?.compactMap { Schedule(rawValue: $0) }
-
-        return Tracker(id: id, name: name, color: color, emojie: emojie, schedule: scheduleFinal)
-    }
-
-}
-
-// MARK: NSFetchedResultsControllerDelegate
-
-extension TrackerStore: NSFetchedResultsControllerDelegate {
-
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        delegate?.didUpdateTracker(insertedSections, deletedSections, updatedIndexPaths, insertedIndexPaths, deletedIndexPaths)
-        clearIndexes()
-    }
-
-    // Вызывается, когда изменяется информация о секции результата запроса
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange sectionInfo: NSFetchedResultsSectionInfo, atSectionIndex sectionIndex: Int, for type: NSFetchedResultsChangeType) {
-
-        switch type {
-        case .insert :
-            insertedSections.insert(sectionIndex)
-        case .delete :
-            deletedSections.insert(sectionIndex)
-        default: break
-        }
-    }
-
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        switch type {
-        case .insert :
-            if let indexPath = newIndexPath {
-                insertedIndexPaths.append(indexPath)
-            }
-        case .delete :
-            if let indexPath = indexPath {
-                deletedIndexPaths.append(indexPath)
-            }
-        case .update :
-            if let indexPath = indexPath {
-                updatedIndexPaths.append(indexPath)
-            }
-        default: break
-        }
-    }
-}
-
-// MARK: TrackerStoreProtocol
-
-extension TrackerStore: TrackerStoreProtocol {
-
-    var numberOfSections: Int {
-        fetchedResultController.sections?.count ?? 0
-    }
-
-    func numberOfItemsInSection(_ section: Int) -> Int {
-        fetchedResultController.sections?[section].numberOfObjects ?? 0
-    }
-
-    func name(of section: Int) -> String? {
-        fetchedResultController.sections?[section].name
-    }
-
-    func object(at indexPath: IndexPath) -> Tracker? {
-        let trackerCoreData = fetchedResultController.object(at: indexPath)
-        return try? makeTracker(from: trackerCoreData)
-    }
-
+    
     func getHeaderLabelFor(section: Int) -> String? {
         guard
-            let trackerCoreData = fetchedResultController.sections?[section].objects?.first as? TrackerCoreData
+            let trackerCoreData = fetchedResultsController.sections?[section].objects?.first as? TrackerCoreData
         else { return nil }
-        return trackerCoreData.category?.title
+        return trackerCoreData.category?.label ?? nil
     }
-
-    func saveTracker(tracker: Tracker, in category: TrackerCategory) throws {
-
-        let trackerCategory = try categoryStore.getCategoryFromCoreData(id: category.id)
-
+    
+    func getTrackerAt(indexPath: IndexPath) -> Tracker? {
+        let trackerCoreData = fetchedResultsController.object(at: indexPath)
         do {
-            let trackerCoreData = TrackerCoreData(context: context)
-            trackerCoreData.id = tracker.id
-            trackerCoreData.name = tracker.name
-            trackerCoreData.color = UIColor.hexString(color: tracker.color)
-            trackerCoreData.emojie = tracker.emojie
-            if let schedule = tracker.schedule {
-                let scheduleArray = schedule.compactMap { "\($0.rawValue)" }
-                trackerCoreData.schedule = scheduleArray.joined(separator: ",")
-            } else {
-                trackerCoreData.schedule = nil
-            }
-            trackerCoreData.category = trackerCategory
-            trackerCoreData.records = []
-            try context.save()
-            delegate?.updateTrackersCollection()
-        }
-        catch let error {
-            print(error.localizedDescription)
+            let tracker = try createTracker(from: trackerCoreData)
+            return tracker
+        } catch {
+            return nil
         }
     }
-
-    func deleteTracker(at indexPath: IndexPath) throws {
-        let trackerCoreData = fetchedResultController.object(at: indexPath)
-        context.delete(trackerCoreData)
-        try context.save()
-    }
-
-//    func trackersFor(_ currentDate: Date, searchRequest: String?) {
-//        if let searchRequest = searchRequest {
-//            fetchedResultController.fetchRequest.predicate = NSPredicate(format: "name CONTAINS %@ AND schedule CONTAINS [n]",
-//                                                                         searchRequest,
-//                                                                         currentDate as CVarArg)
-////            fetchedResultController.fetchRequest.predicate = NSPredicate(format: "name CONTAINS %@", searchRequest)
-//        } else {
-//            fetchedResultController.fetchRequest.predicate = NSPredicate(format: "%K CONTAINS [n]",
-//                #keyPath(TrackerCoreData.schedule), currentDate as CVarArg)
-//        }
-//        try? fetchedResultController.performFetch()
-//    }
-
-    func getFilteredTrackers(date: Date, searchedText: String) throws {
+    
+    func getFilteredTrackers( date: Date, searchedText: String) throws {
         var predicates = [NSPredicate]()
         let dayOfWeekIndex = Calendar.current.component(.weekday, from: date)
         let iso860DayOfWeekIndex = dayOfWeekIndex > 1 ? dayOfWeekIndex - 2 : dayOfWeekIndex + 5
-
-        predicates.append(createSchedulePredicate("\(iso860DayOfWeekIndex)"))
-
+        let regex = createWeekdayRegex(iso860DayOfWeekIndex)
+        predicates.append(createSchedulePredicate(regex))
+        
         if searchedText.isEmpty == false {
             predicates.append(createSearchPredicate(searchedText))
         }
         let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-        fetchedResultController.fetchRequest.predicate = compoundPredicate
-
-        try fetchedResultController.performFetch()
-//        delegate?.updateTrackers()
+        fetchedResultsController.fetchRequest.predicate = compoundPredicate
+        
+        try fetchedResultsController.performFetch()
+        delegate?.updateTrackers()
     }
-
+    
+    func addTracker(tracker: Tracker, with category: TrackerCategory) throws {
+        let categoryCoreData = try categoresStore.getCategoryFromCoreData(id: category.id)
+        let trackerCoreData = TrackerCoreData(context: context)
+        trackerCoreData.createdAt = Date()
+        trackerCoreData.colorHEX = colorMarshalling.hexString(from: tracker.color)
+        trackerCoreData.schedule = DayOfWeek.dayCodeString(from: tracker.schedule)
+        trackerCoreData.category = categoryCoreData
+        trackerCoreData.trackerId = tracker.id.uuidString
+        trackerCoreData.label = tracker.label
+        trackerCoreData.emoji = tracker.emoji
+        try context.save()
+    }
+    
+    // MARK: - Private methods
     private func createWeekdayRegex(_ iso860DayOfWeekIndex: Int) -> String {
         var weekdayPattern = ""
         for index in 0..<7 {
@@ -289,98 +145,38 @@ extension TrackerStore: TrackerStoreProtocol {
         }
         return weekdayPattern
     }
-
-
-    private func createSchedulePredicate(_ dayOfWeekIndex: String) -> NSPredicate {
-        return NSPredicate(format: "%K == nil OR (%K != nil AND %@ IN %K)",
-                           #keyPath(TrackerCoreData.schedule),
-                           #keyPath(TrackerCoreData.schedule),
-                           dayOfWeekIndex,
-                           #keyPath(TrackerCoreData.schedule))
+    
+    private func createSchedulePredicate(_ weekdayPattern: String) -> NSPredicate {
+        return NSPredicate(
+            format: "%K == nil OR (%K != nil AND %K MATCHES[c] %@)",
+            #keyPath(TrackerCoreData.schedule),
+            #keyPath(TrackerCoreData.schedule),
+            #keyPath(TrackerCoreData.schedule), weekdayPattern
+        )
     }
-
-
+    
     private func createSearchPredicate(_ searchedText: String) -> NSPredicate {
-        return NSPredicate(format: "%K CONTAINS %@",
-                           #keyPath(TrackerCoreData.name), searchedText)
+        return NSPredicate(format: "%K CONTAINS[cd] %@",
+                           #keyPath(TrackerCoreData.label), searchedText)
     }
-
-//    func records(for trackerIndexPath: IndexPath) -> Set<TrackerRecord> {
-//        let trackerCoreData = fetchedResultController.object(at: trackerIndexPath)
-//        guard let trackerRecordsCoreData = trackerCoreData.records as? Set<TrackerRecordCoreData> else {
-//            return Set<TrackerRecord>()
-//        }
-//        do {
-//            let trackerRecords = try trackerRecordsCoreData.map { try makeRecord(from: $0)}
-//            return Set(trackerRecords)
-//        } catch {
-//            return Set<TrackerRecord>()
-//        }
-//    }
+    
+    private func colorFromHEX(_ hexString: String) -> UIColor {
+        return colorMarshalling.color(from: hexString)
+    }
+    
+    private func colorToHEX(_ color: UIColor) -> String {
+        return colorMarshalling.hexString(from: color)
+    }
+    
+    private func scheduleFromCoreData(_ coreData: TrackerCoreData) -> [DayOfWeek]? {
+        return DayOfWeek.decodeFrom(dayCodeString: coreData.schedule)
+    }
 }
 
-//protocol TrackerStore {
-//    var managedObjectContext: NSManagedObjectContext? { get }
-//    func add(_ record: NotepadRecord) throws
-//    func delete(_ record: NSManagedObject) throws
-//}
 
-//class TrackerStore {
-//    private let modelName = "Tracker"
-//    private let storeURL = NSPersistentContainer
-//                                .defaultDirectoryURL()
-//                                .appendingPathComponent("data-store.sqlite")
-//    private let container: NSPersistentContainer
-//    private let context: NSManagedObjectContext
-//
-//    enum TrackerStoreError: Error {
-//        case modelNotFound
-//        case failedToLoadPersistentContainer(Error)
-//    }
-//
-//    init() throws {
-//        guard let modelUrl = Bundle(for: TrackerStore.self).url(forResource: modelName, withExtension: "momd"),
-//              let model = NSManagedObjectModel(contentsOf: modelUrl) else {
-//            throw TrackerStoreError.modelNotFound
-//        }
-//
-//        do {
-//            container = try NSPersistentContainer.load(name: modelName, model: model, url: storeURL)
-//            context = container.newBackgroundContext()
-//        } catch {
-//            throw TrackerStoreError.failedToLoadPersistentContainer(error)
-//        }
-//    }
-//
-//    private func performSync<R>(_ action: (NSManagedObjectContext) -> Result<R, Error>) throws -> R {
-//        let context = self.context
-//        var result: Result<R, Error>!
-//        context.performAndWait { result = action(context) }
-//        return try result.get()
-//    }
-//
-//    private func cleanUpReferencesToPersistentStores() {
-//        context.performAndWait {
-//            let coordinator = self.container.persistentStoreCoordinator
-//            try? coordinator.persistentStores.forEach(coordinator.remove)
-//        }
-//    }
-//
-//    deinit {
-//        cleanUpReferencesToPersistentStores()
-//    }
-//}
-//
-//extension NSPersistentContainer {
-//    static func load(name: String, model: NSManagedObjectModel, url: URL) throws -> NSPersistentContainer {
-//        let description = NSPersistentStoreDescription(url: url)
-//        let container = NSPersistentContainer(name: name, managedObjectModel: model)
-//        container.persistentStoreDescriptions = [description]
-//
-//        var loadError: Swift.Error?
-//        container.loadPersistentStores { loadError = $1 }
-//        try loadError.map { throw $0 }
-//
-//        return container
-//    }
-//}
+// MARK: - NSFetchedResultsControllerDelegate
+extension TrackerStore: NSFetchedResultsControllerDelegate {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        delegate?.updateTrackers()
+    }
+}
