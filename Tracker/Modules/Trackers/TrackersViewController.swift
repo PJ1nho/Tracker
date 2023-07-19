@@ -17,13 +17,13 @@ class TrackersViewController: UIViewController {
     private let plugLabelView = UILabel()
     private let trackerItemsView = TrackerItemsView()
     private var addTrackerButton = UIButton()
-    private var categories: [TrackerCategory] = [
-        .init(title: "Домашний уют", trackers: [.init(id: UUID(), name: "abc", color: .red, emojie: "😪", schedule: [.friday]), .init(id: UUID(), name: "ABC", color: .green, emojie: "😪", schedule: [.wednesday])]), .init(title: "Заголовок 2", trackers: [.init(id: UUID(), name: "123", color: .black, emojie: "😪", schedule: [.friday])])
-    ]
-    private var completedTrackers = [TrackerRecord]()
-    private var completedSet = Set<UUID>()
+    private lazy var categories = categoryStore.categories
+    private var completedTrackers: Set<TrackerRecord> = []
     private var currentDate: Date!
     private var filterCategories = [TrackerCategory]()
+    private lazy var trackerStore: TrackerStoreProtocol = TrackerStore(delegate: self)
+    private lazy var trackerRecordStore = TrackerRecordStore()
+    private let categoryStore = TrackerCategoryStore()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,13 +36,18 @@ class TrackersViewController: UIViewController {
     func setupUI() {
         view.backgroundColor = .white
         configurePlugView()
-        currentDate = Date()
+        currentDate = DateFormatterService.shared.getFormatterDate(date: Date())
         configureAddTrackerButton()
         configureTitleLabel()
         configureDatePicker()
         configureSearchTextField()
         configureTracker()
         configureConstraints()
+        trackerItemsView.trackerStore = trackerStore
+        trackerRecordStore.delegate = self
+        try? trackerStore.getFilteredTrackers(date: currentDate, searchedText: searchTextField.text ?? "")
+        try? trackerRecordStore.getCompletedTrackers()
+        trackerItemsView.updateCollectionView()
     }
     
     private func configurePlugView() {
@@ -59,13 +64,7 @@ class TrackersViewController: UIViewController {
         plugLabelView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(plugLabelView)
         
-        if categories.isEmpty {
-            trackerItemsView.isHidden = true
-            plugView.isHidden = false
-        } else {
-            trackerItemsView.isHidden = false
-            plugView.isHidden = true
-        }
+        checkingPlugView(searchText: searchTextField.text)
     }
     
     func configureAddTrackerButton() {
@@ -104,7 +103,8 @@ class TrackersViewController: UIViewController {
         trackerItemsView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(trackerItemsView)
         trackerItemsView.delegate = self
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+//        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        trackerItemsView.updateRecords(records: completedTrackers)
     }
     
     func configureConstraints() {
@@ -157,18 +157,35 @@ class TrackersViewController: UIViewController {
         let date = dateFormatter.date(from: selectedDate)
         guard let date = date else { return }
         datePicker.date = date
-        currentDate = date
-        trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
+        currentDate = DateFormatterService.shared.getFormatterDate(date: date)
+//        trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
+        try? trackerStore.getFilteredTrackers(date: currentDate, searchedText: searchTextField.text ?? "")
+        trackerItemsView.configure(viewModel: .init(currentDate: currentDate))
+        trackerItemsView.updateCollectionView()
         presentedViewController?.dismiss(animated: true)
     }
     
-    func checkingPlugView() {
-        if filterCategories.isEmpty {
+    func checkingPlugView(searchText: String?) {
+        if let searchText = searchText,
+           trackerStore.numberOfSections < 1 && searchText.isEmpty {
             trackerItemsView.isHidden = true
             plugView.isHidden = false
-        } else {
+            plugImageView.isHidden = false
+            plugLabelView.isHidden = false
+            plugLabelView.text = "Что будем отслеживать?"
+        } else if let searchText = searchText,
+                  trackerStore.numberOfSections < 1 && !searchText.isEmpty {
+            trackerItemsView.isHidden = true
+            plugView.isHidden = false
+            plugImageView.isHidden = false
+            plugLabelView.isHidden = false
+            plugLabelView.text = "Ничего не найдено"
+        }
+        else {
             trackerItemsView.isHidden = false
             plugView.isHidden = true
+            plugImageView.isHidden = true
+            plugLabelView.isHidden = true
         }
     }
 }
@@ -177,17 +194,18 @@ class TrackersViewController: UIViewController {
 
 extension TrackersViewController: TrackerItemsViewDelegate {
     func didTapDoneButton(trackerId: UUID) {
-        let futureDate = Date()
+        let futureDate = DateFormatterService.shared.getFormatterDate(date: Date())
+        currentDate = DateFormatterService.shared.getFormatterDate(date: currentDate)
         if futureDate < currentDate {
             return
         }
-        if let trackerIndex = completedTrackers.firstIndex { $0.id == trackerId && Calendar.current.isDate($0.date, equalTo: currentDate, toGranularity: .day)} {
-            completedTrackers.remove(at: trackerIndex)
+        if let trackerRecord = completedTrackers.first { $0.id == trackerId && Calendar.current.isDate($0.date, equalTo: currentDate, toGranularity: .day)} {
+//            completedTrackers.remove(trackerRecord)
+            try? trackerRecordStore.remove(record: trackerRecord)
         } else {
-            completedTrackers.append(.init(id: trackerId, date: currentDate))
-            completedSet.insert(trackerId)
+            try? trackerRecordStore.add(record: .init(id: trackerId, date: currentDate))
+//            completedTrackers.insert(.init(id: trackerId, date: currentDate))
         }
-        trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
     }
 }
 
@@ -201,23 +219,19 @@ extension TrackersViewController: UITextFieldDelegate {
         } else {
             searchString = "\(textField.text! + string)"
         }
-        filterCategories = categories.filter { $0.trackers.contains { $0.name.lowercased().hasPrefix(searchString.lowercased())  } }
-        checkingPlugView()
-        print(searchString)
-        if searchString.isEmpty {
-            filterCategories = categories
-            trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
-        } else {
-            trackerItemsView.configure(viewModel: .init(categories: filterCategories, completedTrackers: completedTrackers, currentDate: currentDate))
-        }
+
+        try? trackerStore.getFilteredTrackers(date: currentDate, searchedText: searchString)
+        trackerItemsView.updateCollectionView()
+        checkingPlugView(searchText: searchString)
+
         return true
     }
     
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
         textField.text = ""
-        filterCategories = categories
-        checkingPlugView()
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        try? trackerStore.getFilteredTrackers(date: currentDate, searchedText: "")
+        trackerItemsView.updateCollectionView()
+        checkingPlugView(searchText: "")
         return true
     }
     
@@ -226,17 +240,57 @@ extension TrackersViewController: UITextFieldDelegate {
     }
 }
 
-    //MARK: - AddTrackerViewControllerDelegate
+// MARK: - AddTrackerViewControllerDelegate
 
 extension TrackersViewController: AddTrackerViewControllerDelegate {
-    func createNewTracker(name: String) {
-        if categories.contains(where: { $0.title == "Тест 1"}),
-           let index = categories.firstIndex(where: { $0.title == "Тест 1"}) {
-            categories[index].trackers.append(.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday]))
-        } else {
-            categories.append(.init(title: "Тест 1", trackers: [.init(id: UUID(), name: name, color: .cyan, emojie: "😪", schedule: [.monday])]))
+    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule]?, category: String) {
+        let tracker = Tracker(id: UUID(), name: name, color: color, emojie: emojie, schedule: schedule)
+//        if categories.contains(where: { $0.title == category}),
+//           let index = categories.firstIndex(where: { $0.title == category }) {
+//            categories[index].trackers.append(tracker)
+//            // comm ОБНОВЛЯТТЬ ДАННЫЕ В КОРДАТЕ
+//        } else {
+//            // comm CОЗДАВАТЬ В КОРДАТЕ
+//            categories.append(.init(id: UUID(), title: category, trackers: [tracker]))
+////            categoryStore.
+//        }
+//        filterCategories = categories
+////        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+        DispatchQueue.main.async {
+            do {
+                let categoryTracker = self.categories.first { $0.title == category }
+                guard let unwrapCategory = categoryTracker else { return }
+                try self.trackerStore.saveTracker(tracker: tracker, in: unwrapCategory)
+            } catch let error {
+                print("Tracker save error \(error.localizedDescription)")
+            }
         }
-        filterCategories = categories
-        trackerItemsView.configure(viewModel: .init(categories: categories, completedTrackers: completedTrackers, currentDate: currentDate))
+    }
+}
+
+extension TrackersViewController: TrackerStoreDelegate {
+    func didUpdateTracker(_ insertedSections: IndexSet, _ deletedSections: IndexSet, _ updatedIndexPaths: [IndexPath], _ insertedIndexPaths: [IndexPath], _ deletedIndexPaths: [IndexPath]) {
+//        DispatchQueue.main.async {
+//            self.trackerItemsView.collectionView.performBatchUpdates {
+//                self.trackerItemsView.collectionView.insertSections(insertedSections)
+//                self.trackerItemsView.collectionView.deleteSections(deletedSections)
+//                self.trackerItemsView.collectionView.reloadItems(at: updatedIndexPaths)
+//                self.trackerItemsView.collectionView.insertItems(at: insertedIndexPaths)
+//                self.trackerItemsView.collectionView.deleteItems(at: deletedIndexPaths)
+//            }
+//        }
+    }
+
+    func updateTrackersCollection() {
+        trackerItemsView.updateCollectionView()
+        configurePlugView()
+    }
+}
+
+extension TrackersViewController: TrackerRecordStoreDelegate {
+    func didUpdate(records: Set<TrackerRecord>) {
+        completedTrackers = records
+        trackerItemsView.updateRecords(records: records)
+        configurePlugView()
     }
 }

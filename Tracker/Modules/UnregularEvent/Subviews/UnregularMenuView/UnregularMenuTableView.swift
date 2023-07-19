@@ -1,17 +1,23 @@
 //
-//  ScheduleTableView.swift
+//  UnregularMenuTableView.swift
 //  Tracker
 //
-//  Created by Тихтей  Павел on 22.04.2023.
+//  Created by Тихтей  Павел on 03.07.2023.
 //
 
 import UIKit
 
+protocol UnregularMenuTableViewDelegate: AnyObject {
+    func didTapMenu(menuItem: NewUnregularMenu)
+}
 
-final class ScheduleTableView: UIView {
+final class UnregularMenuTableView: UIView {
+    
+    weak var delegate: UnregularMenuTableViewDelegate?
     
     private var tableView = UITableView()
-    private let days = Schedule.allCases
+    private let showCategoryVC = "ShowCategoryVC"
+    private let menu = NewUnregularMenu.allCases
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -22,7 +28,7 @@ final class ScheduleTableView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Interface
+    //MARK: - Interface
     
     func setupUI() {
         configureTableView()
@@ -50,34 +56,34 @@ final class ScheduleTableView: UIView {
     }
 }
 
-    // MARK: - UITableViewDataSource
+    //MARK: - UITableViewDataSource
 
-extension ScheduleTableView: UITableViewDataSource {
+extension UnregularMenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        days.count
+        menu.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = days[indexPath.row].rawValue
+        cell.textLabel?.text = menu[indexPath.row].rawValue
         cell.backgroundColor = UIColor(red: 0.902, green: 0.91, blue: 0.922, alpha: 0.3)
-        let switchView = UISwitch(frame: .zero)
-        switchView.setOn(false, animated: true)
-        switchView.tag = indexPath.row
-        switchView.onTintColor = UIColor(red: 55/255, green: 114/255, blue: 231/255, alpha: 1)
-//        switchView.target(forAction:  , withSender:  )
-        cell.accessoryView = switchView
         cell.selectionStyle = .none
+        cell.accessoryType = .disclosureIndicator
         return cell
     }
     
     
 }
 
-    // MARK: - UITableViewDelegate
+    //MARK: - UITableViewDelegate
 
-extension ScheduleTableView: UITableViewDelegate {
+extension UnregularMenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 75
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let menuItem = menu[indexPath.row]
+        delegate?.didTapMenu(menuItem: menuItem)
     }
 }

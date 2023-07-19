@@ -1,23 +1,24 @@
 //
-//  MenuTableView.swift
+//  ScheduleTableView.swift
 //  Tracker
 //
-//  Created by Тихтей  Павел on 17.04.2023.
+//  Created by Тихтей  Павел on 22.04.2023.
 //
 
 import UIKit
 
-protocol MenuTableViewDelegate: AnyObject {
-    func didTapMenu(menuItem: NewTrackerMenu)
+protocol ScheduleTableViewDelegate: AnyObject {
+    func didSelectSchedule(schedule: [Schedule])
 }
 
-final class MenuTableView: UIView {
-    
-    weak var delegate: MenuTableViewDelegate?
+final class ScheduleTableView: UIView {
     
     private var tableView = UITableView()
-    private let showCategoryVC = "ShowCategoryVC"
-    private let menu = NewTrackerMenu.allCases
+    private let days = Schedule.allCases
+    var selectedSchedule: Set<Schedule> = []
+    
+    weak var delegate: ScheduleTableViewDelegate?
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -28,7 +29,7 @@ final class MenuTableView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    //MARK: - Interface
+    // MARK: - Interface
     
     func setupUI() {
         configureTableView()
@@ -54,37 +55,56 @@ final class MenuTableView: UIView {
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
+    
+    private func switchStatus() {
+        for (index, weekDay) in Schedule.allCases.enumerated() {
+            let indexPath = IndexPath(row: index, section: 0)
+            let cell = tableView.cellForRow(at: indexPath)
+            guard let switchView = cell?.accessoryView as? UISwitch else {return}
+
+            if switchView.isOn {
+                selectedSchedule.insert(weekDay)
+            } else {
+                selectedSchedule.remove(weekDay)
+            }
+        }
+    }
+    
+    @objc func switcherValueChanged(switcher: UISwitch) {
+        switchStatus()
+        delegate?.didSelectSchedule(schedule: Array(selectedSchedule))
+    }
 }
 
-    //MARK: - UITableViewDataSource
+    // MARK: - UITableViewDataSource
 
-extension MenuTableView: UITableViewDataSource {
+extension ScheduleTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        menu.count
+        days.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = menu[indexPath.row].rawValue
+        cell.textLabel?.text = days[indexPath.row].value
         cell.backgroundColor = UIColor(red: 0.902, green: 0.91, blue: 0.922, alpha: 0.3)
+        let switchView = UISwitch(frame: .zero)
+        switchView.setOn(false, animated: true)
+        switchView.tag = indexPath.row
+        switchView.isOn = cell.isSelected
+        switchView.onTintColor = UIColor(red: 55/255, green: 114/255, blue: 231/255, alpha: 1)
+        switchView.addTarget(self, action: #selector(switcherValueChanged), for: UIControl.Event.valueChanged)
+        cell.accessoryView = switchView
         cell.selectionStyle = .none
-        cell.accessoryType = .disclosureIndicator
         return cell
     }
     
-    
+
 }
 
-    //MARK: - UITableViewDelegate
+    // MARK: - UITableViewDelegate
 
-extension MenuTableView: UITableViewDelegate {
+extension ScheduleTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 75
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let menuItem = menu[indexPath.row]
-
-        delegate?.didTapMenu(menuItem: menuItem)
     }
 }

@@ -14,9 +14,11 @@ protocol TrackerItemsViewDelegate: AnyObject {
 
 class TrackerItemsView: UIView {
     
-    private var collectionView: UICollectionView!
-    private var categories = [TrackerCategory]()
-    private var completedTrackers = [TrackerRecord]()
+    var collectionView: UICollectionView!
+    var trackerStore: TrackerStoreProtocol!
+    private var trackerCategoryStore = TrackerCategoryStore()
+    private lazy var categories = trackerCategoryStore.categories
+    private var completedTrackers: Set<TrackerRecord> = []
     private var currentDate = Date()
     
     weak var delegate: TrackerItemsViewDelegate?
@@ -61,9 +63,16 @@ class TrackerItemsView: UIView {
     //MARK: - Functions
     
     func configure(viewModel: ViewModel) {
-        self.categories = viewModel.categories
-        self.completedTrackers = viewModel.completedTrackers
         self.currentDate = viewModel.currentDate
+        collectionView.reloadData()
+    }
+
+    func updateCollectionView() {
+        collectionView.reloadData()
+    }
+
+    func updateRecords(records: Set<TrackerRecord> = []) {
+        self.completedTrackers = records
         collectionView.reloadData()
     }
 }
@@ -72,21 +81,20 @@ class TrackerItemsView: UIView {
 
 extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return categories.count
+        return trackerStore.numberOfSections
     }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return categories[section].trackers.count
+        return trackerStore.numberOfItemsInSection(section)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? TrackerCell
         cell?.delegate = self
-        let tracker = categories[indexPath.section].trackers[indexPath.row]
+        guard let tracker = trackerStore.object(at: indexPath) else { return cell! }
         let days = completedTrackers.filter { $0.id == tracker.id }.count
         let dateFormatter = DateFormatterService.shared.dateFormatterCell
         let isSelected = completedTrackers.contains { trackerRecord in
-            let trackerRecordDateString = dateFormatter.string(from: trackerRecord.date)
-            let sameDay = Calendar.current.isDate(trackerRecord.date, equalTo: currentDate, toGranularity: .day)
+            let sameDay = Calendar.current.isDate(DateFormatterService.shared.getFormatterDate(date: trackerRecord.date), equalTo: DateFormatterService.shared.getFormatterDate(date: currentDate), toGranularity: .day)
             guard trackerRecord.id == tracker.id,
                   sameDay else { return false }
             return true
@@ -107,8 +115,8 @@ extension TrackerItemsView: UICollectionViewDataSource, UICollectionViewDelegate
         }
         
         let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: id, for: indexPath) as? TrackerCellHeader
-        let item = categories[indexPath.section]
-        view?.titleLabel.text = item.title
+        let title = trackerStore.getHeaderLabelFor(section: indexPath.section)
+        view?.titleLabel.text = title
         return view ?? UICollectionReusableView()
     }
 }
@@ -147,8 +155,6 @@ extension TrackerItemsView: TrackerCellDelegate {
 
 extension TrackerItemsView {
     struct ViewModel {
-        let categories: [TrackerCategory]
-        let completedTrackers: [TrackerRecord]
         let currentDate: Date
     }
 }

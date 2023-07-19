@@ -1,32 +1,28 @@
 //
-//  NewTrackerViewController.swift
+//  NewUnregularEventViewController.swift
 //  Tracker
 //
-//  Created by Тихтей  Павел on 17.04.2023.
+//  Created by Тихтей  Павел on 03.07.2023.
 //
 
 import UIKit
 
-protocol NewTrackerViewControllerDelegate: AnyObject {
-    func createNewTracker(name: String, color: UIColor, emojie: String, schedule: [Schedule], category: String)
+protocol NewUnregularEventViewControllerDelegate: AnyObject {
+    func createNewUnregularEvent(name: String, color: UIColor, emojie: String, category: String)
 }
 
-protocol NewTrackerViewControllerScheduleDelegate: AnyObject {
-    func didSelectSchedule(schedule: [Schedule])
-}
-
-protocol NewTrackerViewControllerCategoryDelegate: AnyObject {
+protocol NewUnregularEventViewControllerCategoryDelegate: AnyObject {
     func didSelectCategory(category: String)
 }
 
-final class NewTrackerViewController: UIViewController {
+final class NewUnregularEventViewController: UIViewController, NewTrackerViewControllerCategoryDelegate {
     
     private let contentView = UIView()
     private var scrollView = UIScrollView()
     private let stackView = UIStackView()
     private let textFieldView = UIView()
     private let textField = UITextField()
-    private let menuTableView = MenuTableView()
+    private let unregularMenuTableView = UnregularMenuTableView()
     private let emojiCollectionView = EmojiCollectionView()
     private let colorCollectionView = ColorCollectionView()
     private let buttonStackView = UIStackView()
@@ -35,20 +31,19 @@ final class NewTrackerViewController: UIViewController {
     
     var selectedColor = UIColor.clear
     var selectedEmojie = String()
-    var selectedSchedule = [Schedule]()
     var selectedCategory = String()
     
-    weak var delegate: NewTrackerViewControllerDelegate?
+    weak var delegate: NewUnregularEventViewControllerDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
     }
     
-    // MARK: - Interface
+// MARK: - Interface
     
     private func setupUI() {
-        title = "Новая привычка"
+        title = "Новое нерегулярное событие"
         view.backgroundColor = .white
         configureContentView()
         configureScrollView()
@@ -99,9 +94,9 @@ final class NewTrackerViewController: UIViewController {
     }
     
     private func configureMenuTableView() {
-        menuTableView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.addArrangedSubview(menuTableView)
-        menuTableView.delegate = self
+        unregularMenuTableView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addArrangedSubview(unregularMenuTableView)
+        unregularMenuTableView.delegate = self
     }
     
     private func configureEmojiCollectionView() {
@@ -174,12 +169,12 @@ final class NewTrackerViewController: UIViewController {
             textField.bottomAnchor.constraint(equalTo: textFieldView.bottomAnchor),
             textField.trailingAnchor.constraint(equalTo: textFieldView.trailingAnchor, constant: -16),
             
-            menuTableView.topAnchor.constraint(equalTo: textFieldView.bottomAnchor, constant: 24),
-            menuTableView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor, constant: 16),
-            menuTableView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: -16),
-            menuTableView.heightAnchor.constraint(equalToConstant: 150),
+            unregularMenuTableView.topAnchor.constraint(equalTo: textFieldView.bottomAnchor, constant: 24),
+            unregularMenuTableView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor, constant: 16),
+            unregularMenuTableView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: -16),
+            unregularMenuTableView.heightAnchor.constraint(equalToConstant: 150),
             
-            emojiCollectionView.topAnchor.constraint(equalTo: menuTableView.bottomAnchor, constant: 32),
+            emojiCollectionView.topAnchor.constraint(equalTo: unregularMenuTableView.bottomAnchor, constant: -40),
             emojiCollectionView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
             emojiCollectionView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor),
             emojiCollectionView.heightAnchor.constraint(equalToConstant: 240),
@@ -195,72 +190,72 @@ final class NewTrackerViewController: UIViewController {
             buttonStackView.heightAnchor.constraint(equalToConstant: 60),
             
         ])
+        
     }
     
-    // MARK: - Functions
+// MARK: - Actions
     
     @objc private func cancelButtonTapped() {
         dismiss(animated: true)
     }
     
     @objc private func createButtonTapped() {
-        delegate?.createNewTracker(name: textField.text ?? "", color: selectedColor, emojie: selectedEmojie, schedule: selectedSchedule, category: selectedCategory)
+        delegate?.createNewUnregularEvent(name: textField.text ?? "", color: selectedColor, emojie: selectedEmojie, category: selectedCategory)
         self.dismiss(animated: true, completion: {
             self.presentingViewController?.dismiss(animated: true)
         })
     }
 }
 
-// MARK: - MenuTableViewDelegate
-
-extension NewTrackerViewController: MenuTableViewDelegate {
-    func didTapMenu(menuItem: NewTrackerMenu) {
-        switch menuItem {
-        case .category:
-            let chooseCategoryViewController = ChooseCategoryViewController()
-            chooseCategoryViewController.delegate = self
-            let navigationController = UINavigationController(rootViewController: chooseCategoryViewController)
-            present(navigationController, animated: true)
-        case .schedule:
-            let scheduleViewController = ScheduleViewController()
-            scheduleViewController.newTrackerDelegate = self
-            let navigationController = UINavigationController(rootViewController: scheduleViewController)
-            present(navigationController, animated: true)
-        }
-    }
-}
-
-extension NewTrackerViewController: ColorCollectionViewDelegate {
-    func didSelectColor(color: UIColor) {
-        selectedColor = color
-    }
-}
-
-extension NewTrackerViewController: EmojiCollectionViewDelegate {
-    func didSelectEmojie(emojie: String) {
-        selectedEmojie = emojie
-    }
-}
-
-extension NewTrackerViewController: NewTrackerViewControllerScheduleDelegate {
-    func didSelectSchedule(schedule: [Schedule]) {
-        selectedSchedule = schedule
-    }
-}
-
-extension NewTrackerViewController: NewTrackerViewControllerCategoryDelegate {
-    func didSelectCategory(category: String) {
-        selectedCategory = category
-    }
-}
 // MARK: - UITextFieldDelegate
 
-extension NewTrackerViewController: UITextFieldDelegate {
+extension NewUnregularEventViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         return textField.resignFirstResponder()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.view.endEditing(true)
+    }
+}
+
+// MARK: - ColorCollectionViewDelegate
+
+extension NewUnregularEventViewController: ColorCollectionViewDelegate {
+    func didSelectColor(color: UIColor) {
+        selectedColor = color
+    }
+}
+
+// MARK: - EmojiCollectionViewDelegate
+
+extension NewUnregularEventViewController: EmojiCollectionViewDelegate {
+    func didSelectEmojie(emojie: String) {
+        selectedEmojie = emojie
+    }
+}
+
+// MARK: - UnregularMenuTableViewDelegate
+
+extension NewUnregularEventViewController: UnregularMenuTableViewDelegate {
+    func didTapMenu(menuItem: NewUnregularMenu) {
+        switch menuItem {
+        case .category:
+            let chooseCategoryViewController = ChooseCategoryViewController()
+            chooseCategoryViewController.delegate = self
+            let navigationController = UINavigationController(rootViewController: chooseCategoryViewController)
+            present(navigationController, animated: true)
+        }
+    }
+}
+
+extension NewUnregularEventViewController: NewUnregularEventViewControllerDelegate {
+    func createNewUnregularEvent(name: String, color: UIColor, emojie: String, category: String) {
+    }
+}
+
+extension NewUnregularEventViewController: NewUnregularEventViewControllerCategoryDelegate {
+    func didSelectCategory(category: String) {
+        selectedCategory = category
     }
 }
