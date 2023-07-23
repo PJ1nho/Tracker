@@ -1,0 +1,89 @@
+// MARK: - Onboarding
+"firstOnboarding.text" = "Отслеживайте только то, что хотите";
+"secondOnboarding.text" = "Даже если это не литры воды и йога";
+"onboarding.button" = "Вот это технологии!";
+
+
+// MARK: - TabBar
+"trackers" = "Трекеры";
+"statistics" = "Статистика";
+
+
+// MARK: - Trackers
+"trackers.mainPlaceholder" = "Что будем отслеживать?";
+"trackers.searchPlaceholder" = "Ничего не найдено";
+"trackers.searchBarPlaceholder" = "Поиск";
+"filters" = "Фильтры";
+
+"trackers.pinTracker" = "Закрепить";
+"trackers.unpinTracker" = "Открепить";
+"trackers.editTracker" = "Редактировать";
+"trackers.deleteTracker" = "Удалить";
+
+"trackers.deleteTrackerAlertTitle" = "Уверены что хотите удалить трекер?";
+"trackers.deleteTrackerAlertAction" = "Удалить";
+"trackers.deleteTrackerAlertCancel" = "Отменить";
+
+
+// MARK: - Filters
+"filters.all" = "Все трекеры";
+"filters.today" = "Трекеры на сегодня";
+"filters.completed" = "Завершенные";
+"filters.notCompleted" = "Не завершенные";
+
+// MARK: - NewTracker
+"newTracker.title" = "Создание трекера";
+"newTracker.eventButton" = "Нерегулярное событие";
+"newTracker.habitButton" = "Привычка";
+
+
+// MARK: - Constructor
+"constructor.newEvent" = "Новое нерегулярное событие";
+"constructor.newHabit" = "Новая привычка";
+"constructor.edit" = "Редактирование привычки";
+"constructor.trackerName" = "Введите название трекера";
+"constructor.textLimitLabel" = "Ограничение 38 символов";
+"constructor.category" = "Категория";
+"constructor.schedule" = "Расписание";
+"constructor.emoji" = "Emoji";
+"constructor.colors" = "Цвета";
+"constructor.cancel" = "Отмена";
+"constructor.create" = "Создать";
+
+
+// MARK: - CategorySelection
+"categorySelection.category" = "Категория";
+"categorySelection.mainPlaceholder" = "Привычки и события можно объединить по смыслу";
+"categorySelection.addCategory" = "Добавить категорию";
+
+
+// MARK: - NewCategory
+"newCategory.title" = "Новая категория";
+"newCategory.categoryName" = "Введите название категории";
+"newCategory.ready" = "Готово";
+
+
+// MARK: - Statistic
+"statistics.title" = "Статистика";
+"statistics.mainPlaceholder" = "Анализировать пока нечего";
+"statistics.trackersCompleted" = "Трекеров завершено";
+
+// MARK: - Shedule
+"schedule.title" = "Расписание";
+"schedule.everyDay" = "Каждый день";
+"schedule.monday" = "Понедельник";
+"schedule.tuesday" = "Вторник";
+"schedule.wednesday" = "Среда";
+"schedule.thursday" = "Четверг";
+"schedule.friday" = "Пятница";
+"schedule.saturday" = "Суббота";
+"schedule.sunday" = "Воскресенье";
+
+"schedule.mondayShort" = "Пн";
+"schedule.tuesdayShort" = "Вт";
+"schedule.wednesdayShort" = "Ср";
+"schedule.thursdayShort" = "Чт";
+"schedule.fridayShort" = "Пт";
+"schedule.saturdayShort" = "Сб";
+"schedule.sundayShort" = "Вс";
+"schedule.ready" = "Готово";
