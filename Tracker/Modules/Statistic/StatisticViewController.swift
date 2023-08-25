@@ -1,71 +1,47 @@
-//
-//  StatisticViewController.swift
-//  Tracker
-//
-//  Created by Тихтей  Павел on 10.04.2023.
-//
-
 import UIKit
 
 final class StatisticViewController: UIViewController {
+    // MARK: - Private properties
+    private let statisticLabel = UILabel()
+    private let mainSpacePlaceholderStack = UIStackView(
+        imageName: "statisticPlaceholder",
+        text: "Анализировать пока нечего"
+    )
     
-    private let titleLabel = UILabel()
-    private let plugView = UIView()
-    private let plugImageView = UIImageView()
-    private let plugLabelView = UILabel()
+    private var currentDate = Date.getDate(Date())
     
+    // MARK: - Life cicle
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        .darkContent
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
+        setNeedsStatusBarAppearanceUpdate()
+        view.backgroundColor = .ypWhiteDay
+        statisticLabel.configureLabel(
+            text: "Статистика",
+            addToView: view,
+            ofSize: 34,
+            weight: .bold
+        )
+        configureLayout()
     }
     
-    //MARK: - Interface
     
-    func setupUI() {
-        view.backgroundColor = .white
-        configureTitleLabel()
-        configurePlugView()
-        configureConstraints()
-    }
-    
-    func configureTitleLabel() {
-        titleLabel.text = "Cтатистика"
-        titleLabel.font = .boldSystemFont(ofSize: 34)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(titleLabel)
-    }
-    
-    func configurePlugView() {
-        plugView.backgroundColor = .white
-        plugView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(plugView)
+    // MARK: - Layout configuraion
+    private func configureLayout() {
+        statisticLabel.translatesAutoresizingMaskIntoConstraints = false
+        mainSpacePlaceholderStack.translatesAutoresizingMaskIntoConstraints = false
         
-        plugImageView.image = UIImage(named: "statisticPlugImage")
-        plugImageView.translatesAutoresizingMaskIntoConstraints = false
-        plugView.addSubview(plugImageView)
+        view.addSubview(statisticLabel)
+        view.addSubview(mainSpacePlaceholderStack)
         
-        plugLabelView.text = "Анализировать пока нечего"
-        plugLabelView.font = .systemFont(ofSize: 12, weight: .medium)
-        plugLabelView.translatesAutoresizingMaskIntoConstraints = false
-        plugView.addSubview(plugLabelView)
-    }
-    
-    func configureConstraints() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 88),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            statisticLabel.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 16),
+            statisticLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: view.frame.height * 0.1083),
             
-            plugView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            plugView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            plugView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            plugView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
-            
-            plugImageView.centerYAnchor.constraint(equalTo: plugView.centerYAnchor),
-            plugImageView.centerXAnchor.constraint(equalTo: plugView.centerXAnchor),
-            
-            plugLabelView.topAnchor.constraint(equalTo: plugImageView.bottomAnchor, constant: 8),
-            plugLabelView.centerXAnchor.constraint(equalTo: plugView.centerXAnchor)
+            mainSpacePlaceholderStack.topAnchor.constraint(equalTo: view.topAnchor, constant: view.frame.height * 0.495),
+            mainSpacePlaceholderStack.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
     }
 }
-
