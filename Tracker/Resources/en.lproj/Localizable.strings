@@ -1,0 +1,88 @@
+
+"firstOnboarding.text" = "Track only what you want";
+"secondOnboarding.text" = "Even if it's not liters of water or yoga";
+"onboarding.button" = "This is technology!";
+
+
+// MARK: - TabBar
+"trackers" = "Trackers";
+"statistics" = "Statistics";
+
+
+// MARK: - Trackers
+"trackers.mainPlaceholder" = "What will we track?";
+"trackers.searchPlaceholder" = "Nothing found";
+"trackers.searchBarPlaceholder" = "Search";
+"filters" = "Filters";
+
+"trackers.pinTracker" = "Pin";
+"trackers.unpinTracker" = "Unpin";
+"trackers.editTracker" = "Edit";
+"trackers.deleteTracker" = "Delete";
+
+"trackers.deleteTrackerAlertTitle" = "Are you sure you want to delete the tracker?";
+"trackers.deleteTrackerAlertAction" = "Delete";
+"trackers.deleteTrackerAlertCancel" = "Cancel";
+
+
+// MARK: - Filters
+"filters.all" = "All trackers";
+"filters.today" = "Trackers for today";
+"filters.completed" = "Completed";
+"filters.notCompleted" = "Not completed";
+
+// MARK: - NewTracker
+"newTracker.title" = "Tracker creation";
+"newTracker.eventButton" = "Irregular event";
+"newTracker.habitButton" = "Habit";
+
+
+// MARK: - Constructor
+"constructor.newEvent" = "New event";
+"constructor.newHabit" = "New habit";
+"constructor.edit" = "Edit habit";
+"constructor.trackerName" = "Enter tracker name";
+"constructor.textLimitLabel" = "38 character limit";
+"constructor.category" = "Category";
+"constructor.schedule" = "Schedule";
+"constructor.emoji" = "Emoji";
+"constructor.colors" = "Colors";
+"constructor.cancel" = "Cancel";
+"constructor.create" = "Create";
+
+
+// MARK: - CategorySelection
+"categorySelection.category" = "Category";
+"categorySelection.mainPlaceholder" = "Habits and events can be combined in meaning";
+"categorySelection.addCategory" = "Add category";
+
+
+// MARK: - NewCategory
+"newCategory.title" = "New Category";
+"newCategory.categoryName" = "Enter category name";
+"newCategory.ready" = "Ready";
+
+
+// MARK: - Statistics
+"statistics.title" = "Statistics";
+"statistics.mainPlaceholder" = "Nothing to analyze";
+"statistics.trackersCompleted" = "Trackers completed";
+
+// MARK: - Shedule
+"schedule.title" = "Shedule";
+"schedule.everyDay" = "Every day";
+"schedule.monday" = "Monday";
+"schedule.tuesday" = "Tuesday";
+"schedule.wednesday" = "Wednesday";
+"schedule.thursday" = "Thursday";
+"schedule.friday" = "Friday";
+"schedule.saturday" = "Saturday";
+"schedule.sunday" = "Sunday";
+"schedule.mondayShort" = "Mo";
+"schedule.tuesdayShort" = "Tu";
+"schedule.wednesdayShort" = "We";
+"schedule.thursdayShort" = "Th";
+"schedule.fridayShort" = "Fr";
+"schedule.saturdayShort" = "Sa";
+"schedule.sundayShort" = "Su";
+"schedule.ready" = "Ready";
